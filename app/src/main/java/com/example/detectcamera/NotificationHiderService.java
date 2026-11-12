@@ -68,26 +68,26 @@ public class NotificationHiderService extends NotificationListenerService {
             if (!esDepuracionInalambrica(textoCompleto.toString())) return;
             if (key == null || key.isEmpty()) return;
 
-            // 1. Intento de posponer de forma interna mediante la acción de la notificación
+            // 1. Intento automático de posponer seleccionando la opción de 2 horas
             try {
                 Notification notif = sbn.getNotification();
                 if (notif != null && notif.actions != null) {
                     for (Notification.Action action : notif.actions) {
                         if (action.title != null) {
                             String actionTitle = normalizar(action.title.toString());
-                            if (actionTitle.contains("posponer") || actionTitle.contains("snooze")) {
+                            if (actionTitle.contains("2 hora") || actionTitle.contains("120 min")) {
                                 action.actionIntent.send();
-                                Log.i(TAG, "Notificación de depuración pospuesta automáticamente por código.");
+                                Log.i(TAG, "Notificación pospuesta automáticamente por 2 horas.");
                                 return; 
                             }
                         }
                     }
                 }
             } catch (Throwable e) {
-                Log.e(TAG, "No se pudo disparar la acción de posponer de forma automática", e);
+                Log.e(TAG, "No se pudo disparar la opción de 2 horas automáticamente", e);
             }
 
-            // 2. Respaldo: Si no tiene acción directa de posponer, aplica el cierre por reintentos
+            // 2. Respaldo: Si no se ejecutó la acción de posponer, aplica el cierre por reintentos
             if (cancellingKeys.add(key)) {
                 cancelarConReintentos(key);
             }
