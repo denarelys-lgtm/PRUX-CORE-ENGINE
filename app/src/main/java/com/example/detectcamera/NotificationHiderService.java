@@ -1,6 +1,7 @@
 package com.example.detectcamera;
 
 import android.app.Notification;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -68,26 +69,19 @@ public class NotificationHiderService extends NotificationListenerService {
             if (!esDepuracionInalambrica(textoCompleto.toString())) return;
             if (key == null || key.isEmpty()) return;
 
-            // 1. Intento automático de posponer seleccionando la opción de 2 horas
-            try {
-                Notification notif = sbn.getNotification();
-                if (notif != null && notif.actions != null) {
-                    for (Notification.Action action : notif.actions) {
-                        if (action.title != null) {
-                            String actionTitle = normalizar(action.title.toString());
-                            if (actionTitle.contains("2 hora") || actionTitle.contains("120 min")) {
-                                action.actionIntent.send();
-                                Log.i(TAG, "Notificación pospuesta automáticamente por 2 horas.");
-                                return; 
-                            }
-                        }
-                    }
+            // 1. Pospone la notificación de forma nativa por 2 horas (7,200,000 ms)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                try {
+                    long dosHorasMs = 2L * 60L * 60L * 1000L;
+                    snoozeNotification(key, dosHorasMs);
+                    Log.i(TAG, "✅ Notificación de depuración pospuesta internamente por 2 horas.");
+                    return;
+                } catch (Throwable e) {
+                    Log.e(TAG, "⚠️ No se pudo posponer nativamente, aplicando respaldo de cierre", e);
                 }
-            } catch (Throwable e) {
-                Log.e(TAG, "No se pudo disparar la opción de 2 horas automáticamente", e);
             }
 
-            // 2. Respaldo: Si no se ejecutó la acción de posponer, aplica el cierre por reintentos
+            // 2. Respaldo: Si el sistema bloquea el snooze, aplica el cierre por reintentos
             if (cancellingKeys.add(key)) {
                 cancelarConReintentos(key);
             }
