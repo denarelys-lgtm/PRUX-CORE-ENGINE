@@ -1,13 +1,16 @@
 package com.example.detectcamera;
 
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
@@ -91,7 +94,6 @@ public class ServerService extends Service {
             int flags,
             int startId
     ) {
-
         /*
          * Solicita al sistema que intente mantener
          * el servicio disponible si el proceso es destruido.
@@ -131,7 +133,7 @@ public class ServerService extends Service {
                 )
                 .setPriority(
                         NotificationCompat
-                                .PRIORITY_LOW
+                                .PRIORITY_MIN // Cambiado a MIN para total discreción en Android 16
                 )
                 .setOngoing(true)
                 .build();
@@ -175,7 +177,7 @@ public class ServerService extends Service {
                                 CHANNEL_ID,
                                 "Servidor DetectCamera",
                                 NotificationManager
-                                        .IMPORTANCE_LOW
+                                        .IMPORTANCE_MIN // IMPORTANCE_MIN oculta totalmente alertas visuales y sonoras
                         )
                 );
             }
@@ -191,11 +193,6 @@ public class ServerService extends Service {
         PruxCore core = PruxCore.get();
         if (core != null) core.recovery().unregister("network");
 
-        /*
-         * No necesitamos detener el monitor ADB aquí.
-         * Su recuperación pertenece al motor ADB y al
-         * ciclo de vida general de Android.
-         */
         WebServerManager.stop();
 
         Log.w(
@@ -206,7 +203,32 @@ public class ServerService extends Service {
         super.onDestroy();
     }
 
-
+    /**
+     * Intercepta cuando la app es eliminada de aplicaciones recientes
+     * y programa un re-lanzamiento inmediato con AlarmManager.
+     */
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        Intent restartServiceIntent = new Intent(getApplicationContext(), this.getClass());
+        restartServiceIntent.setPackage(getPackageName());
+        
+        PendingIntent restartServicePI = PendingIntent.getService(
+                getApplicationContext(),
+                1,
+                restartServiceIntent,
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_ONE_SHOT
+        );
+        
+        AlarmManager alarmService = (AlarmManager) getApplicationContext().getSystemService(Context.ALARM_SERVICE);
+        if (alarmService != null) {
+            alarmService.setExactAndAllowWhileIdle(
+                    AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                    SystemClock.elapsedRealtime() + 1000,
+                    restartServicePI
+            );
+        }
+        super.onTaskRemoved(rootIntent);
+    }
 
     /** Recupera únicamente el servidor HTTP mientras este Service siga vivo. */
     private void registerNetworkRecovery() {
