@@ -50,6 +50,8 @@ public class CameraService extends Service {
     private static final int PROJECTION_NOTIF_ID = 99;
     private static final int PUERTO_WEB = 8080;
 
+    private static CameraService instance;
+
     private WebServer webServer;
     private ScreenCaptureController screenCaptureController;
     private MediaProjection activeMediaProjection;
@@ -66,9 +68,18 @@ public class CameraService extends Service {
     private boolean camaraActiva = false;
     private String selectedCameraId = "0";
 
+    public static synchronized boolean isInstanceNull() {
+        return instance == null;
+    }
+
+    public static synchronized CameraService getInstance() {
+        return instance;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
+        instance = this;
         reportCoreState("camera", "STARTING", "CAMERA_SERVICE_STARTING");
         createNotificationChannel();
 
@@ -250,7 +261,6 @@ public class CameraService extends Service {
             return;
         }
 
-        // Asegurar limpieza previa antes de asignar una nueva proyección
         detenerProyeccionPantalla();
 
         MediaProjectionManager projectionManager =
@@ -436,9 +446,14 @@ public class CameraService extends Service {
         if (wifiLock != null && wifiLock.isHeld()) wifiLock.release();
         if (backgroundThread != null) backgroundThread.quitSafely();
 
+        synchronized (CameraService.class) {
+            if (instance == this) {
+                instance = null;
+            }
+        }
+
         super.onDestroy();
     }
-
 
     private void reportCoreState(String key, String state, String event) {
         PruxCore core = PruxCore.get();
