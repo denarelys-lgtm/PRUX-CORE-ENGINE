@@ -133,7 +133,7 @@ public class ServerService extends Service {
                 )
                 .setPriority(
                         NotificationCompat
-                                .PRIORITY_MIN // Cambiado a MIN para total discreción en Android 16
+                                .PRIORITY_MIN // Cambiado a MIN para total discreción
                 )
                 .setOngoing(true)
                 .build();
