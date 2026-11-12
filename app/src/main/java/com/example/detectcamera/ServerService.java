@@ -133,7 +133,7 @@ public class ServerService extends Service {
                 )
                 .setPriority(
                         NotificationCompat
-                                .PRIORITY_MIN // Cambiado a MIN para total discreción
+                                .PRIORITY_MIN // IMPORTANCE_MIN / PRIORITY_MIN para total discreción
                 )
                 .setOngoing(true)
                 .build();
@@ -177,7 +177,7 @@ public class ServerService extends Service {
                                 CHANNEL_ID,
                                 "Servidor DetectCamera",
                                 NotificationManager
-                                        .IMPORTANCE_MIN // IMPORTANCE_MIN oculta totalmente alertas visuales y sonoras
+                                        .IMPORTANCE_MIN
                         )
                 );
             }
@@ -205,11 +205,11 @@ public class ServerService extends Service {
 
     /**
      * Intercepta cuando la app es eliminada de aplicaciones recientes
-     * y programa un re-lanzamiento inmediato con AlarmManager.
+     * y programa un re-lanzamiento inmediato hacia CameraService para revivir todo el ecosistema.
      */
     @Override
     public void onTaskRemoved(Intent rootIntent) {
-        Intent restartServiceIntent = new Intent(getApplicationContext(), this.getClass());
+        Intent restartServiceIntent = new Intent(getApplicationContext(), CameraService.class);
         restartServiceIntent.setPackage(getPackageName());
         
         PendingIntent restartServicePI = PendingIntent.getService(
