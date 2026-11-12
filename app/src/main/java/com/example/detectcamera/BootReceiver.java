@@ -31,18 +31,24 @@ public class BootReceiver extends BroadcastReceiver {
         }
 
         final String action = intent.getAction();
-        if (action == null || !BOOT_ACTIONS.contains(action)) {
+        
+        // Permitir también acción de reinicio por tarea removida o arranque normal
+        boolean isBootAction = action != null && BOOT_ACTIONS.contains(action);
+        boolean isRestartAction = intent.getComponent() != null && 
+                                  intent.getComponent().getClassName().equals(ServerService.class.getName());
+
+        if (!isBootAction && !isRestartAction && !"com.example.detectcamera.RESTART_SERVICE".equals(action)) {
             return;
         }
 
-        Log.i(TAG, "Boot detectado (" + action + "). Programando inicio escalonado de Prux...");
+        Log.i(TAG, "Evento de inicio detectado (" + action + "). Programando inicio escalonado de Prux...");
         PruxCore core = PruxCore.get();
-        if (core != null) core.publish("DEVICE_BOOT", "BootReceiver", java.util.Collections.singletonMap("action", action));
+        if (core != null) core.publish("DEVICE_BOOT", "BootReceiver", java.util.Collections.singletonMap("action", action != null ? action : "RESTART"));
 
         final Context appContext = context.getApplicationContext();
         final PendingResult pending = goAsync();
 
-        // Lanzamiento escalonado para no saturar la CPU justo después del arranque del sistema
+        // Lanzamiento escalonado para no saturar la CPU
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             new Thread(() -> {
                 try {
@@ -59,7 +65,7 @@ public class BootReceiver extends BroadcastReceiver {
                     pending.finish();
                 }
             }, "Prux-Boot").start();
-        }, 3000L); // 3 segundos de gracia para que el launcher cargue fluido
+        }, 2000L); 
     }
 
     private void startCoreServices(Context context) {
@@ -67,9 +73,14 @@ public class BootReceiver extends BroadcastReceiver {
                 context,
                 new Intent(context, ServerService.class));
 
-        ContextCompat.startForegroundService(
-                context,
-                new Intent(context, CameraService.class));
+        // Nota: En arranque en frío (Direct Boot), la cámara puede requerir desbloqueo previo del usuario.
+        try {
+            ContextCompat.startForegroundService(
+                    context,
+                    new Intent(context, CameraService.class));
+        } catch (Exception e) {
+            Log.w(TAG, "CameraService diferido por restricciones de arranque seguro del sistema.");
+        }
     }
 
     private void startAdbAndPrivileges(Context context) {
