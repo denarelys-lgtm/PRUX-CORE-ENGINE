@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "152057893669",
+    "project_id": "detectcameracentral",
+    "storage_bucket": "detectcameracentral.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:152057893669:android:bc15a196980544a5ce40cc",
+        "android_client_info": {
+          "package_name": "com.example.detectcamera"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBav8x2h5qZJkhlKDwAhvrKWvmBvszqgg0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
