@@ -6,6 +6,7 @@ import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
 
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
@@ -53,7 +54,7 @@ public class DeviceRegistryManager {
                 return;
             }
 
-            // Conexión explícita con Realtime Database.
+            // Conexión explícita con Firebase Realtime Database.
             FirebaseDatabase firebaseDatabase =
                     FirebaseDatabase.getInstance(DATABASE_URL);
 
@@ -62,7 +63,7 @@ public class DeviceRegistryManager {
                             .getReference(DATABASE_NODE)
                             .child(idUnico);
 
-            // Preparar todos los datos en una sola operación.
+            // Preparar los datos del dispositivo.
             Map<String, Object> datos = new HashMap<>();
 
             datos.put("modelo", modeloDispositivo);
@@ -71,18 +72,27 @@ public class DeviceRegistryManager {
             datos.put("estado", "conectado");
             datos.put("plataforma", "Android");
 
-            // Actualización atómica del registro.
+            // Registrar todos los datos en una sola operación.
             databaseReference.updateChildren(
                     datos,
-                    (error, reference) -> {
+                    (DatabaseError error, DatabaseReference reference) -> {
 
                         if (error != null) {
 
                             Log.e(
                                     TAG,
                                     "ERROR AL REGISTRAR EN FIREBASE: "
-                                            + error.getMessage(),
-                                    error
+                                            + error.getMessage()
+                            );
+
+                            Log.e(
+                                    TAG,
+                                    "Código de error: " + error.getCode()
+                            );
+
+                            Log.e(
+                                    TAG,
+                                    "Detalles: " + error.getDetails()
                             );
 
                             return;
