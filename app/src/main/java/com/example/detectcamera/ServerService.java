@@ -69,6 +69,9 @@ public class ServerService extends Service {
                     "Servidor Android iniciado"
             );
 
+            // --- INICIA EL TÚNEL DE CLOUDFLARE AUTOMÁTICAMENTE Y REPORTA A FIREBASE ---
+            CloudflareTunnelManager.iniciarTunel(this);
+
         } catch (IOException e) {
 
             reportCoreState("network", "ERROR", "SERVER_START_FAILED");
@@ -194,6 +197,9 @@ public class ServerService extends Service {
         if (core != null) core.recovery().unregister("network");
 
         WebServerManager.stop();
+        
+        // Detener el túnel de Cloudflare al destruir el servicio
+        CloudflareTunnelManager.detenerTunel();
 
         Log.w(
                 TAG,
@@ -241,6 +247,10 @@ public class ServerService extends Service {
                 WebServerManager.start(getApplicationContext());
                 running = true;
                 updateNotification();
+                
+                // Reiniciar también el túnel por seguridad si el servidor se recupera
+                CloudflareTunnelManager.iniciarTunel(getApplicationContext());
+
                 Log.i(TAG, "Servidor recuperado por PRUX CORE");
                 return true;
             } catch (IOException error) {
