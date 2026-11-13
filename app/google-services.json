@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "152057893669",
+    "firebase_url": "https://detectcameracentral-default-rtdb.firebaseio.com",
     "project_id": "detectcameracentral",
     "storage_bucket": "detectcameracentral.firebasestorage.app"
   },
